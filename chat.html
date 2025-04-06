@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
+    <title>ChatRT 3.0</title>
+    <link href="image/favicon.png" rel="shortcut icon">
+    <link href="css/app.css" rel="stylesheet">
+    <style>
+        main {
+            overflow-y: scroll;
+            display: flex;
+            flex-direction: column-reverse;
+        }
+
+        .active {
+            outline: 5px dashed red;
+            outline-offset: -5px;
+        }
+
+        .image {
+            max-width: 200px;
+            max-height: 200px;
+            border: 1px solid #999;
+            cursor: pointer;
+        }
+
+        .image:fullscreen {
+            object-fit: scale-down !important;
+            border: none !important;
+            background: #000 !important;
+        }
+
+        #dialog {
+            border: 1px solid #000;
+            border-radius: 5px;
+            padding: 5px;
+        }
+
+        #dialog::backdrop {
+            background: #0009;
+        }
+
+        #dialog form {
+            margin-bottom: 5px;
+        }
+
+        #container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        #container .image {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+        }
+
+        #btn {
+            anchor-name: --btn;
+        }
+
+        #pop {
+            border: 1px solid #000;
+            border-radius: 5px;
+            padding: 5px;
+
+            inset: unset;
+            top: anchor(--btn top);
+            right: anchor(--btn left);
+            translate: -5px;
+        }
+
+        #location-dialog {
+            width: 450px;
+            border: none;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            background-color: #fff;
+        }
+
+        #location-dialog h3 {
+            margin-top: 0;
+            color: #333;
+            font-size: 1.2rem;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        #location-dialog .map-preview {
+            width: 99%;
+            height: 250px;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 15px 0;
+            border: 1px solid #ddd;
+        }
+
+        .location-info {
+            background-color: #f9f9f9;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+
+        .location-address {
+            font-size: 0.95em;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .location-coordinates {
+            font-size: 0.85em;
+            color: #666;
+            font-family: monospace;
+        }
+
+        .location-status {
+            font-size: 0.9em;
+            color: #555;
+            margin: 10px 0;
+            padding: 8px;
+            background-color: #f7f7f7;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .location-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .location-options select,
+        .location-options label {
+            padding: 6px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .location-options select {
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: space-between;
+        }
+
+        /* Button styles */
+        .primary-btn,
+        .secondary-btn {
+            padding: 8px 15px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .primary-btn {
+            background-color: #4285f4;
+            color: white;
+        }
+
+        .primary-btn:hover {
+            background-color: #3367d6;
+        }
+
+        .primary-btn:disabled {
+            background-color: #a9c3f5;
+            cursor: not-allowed;
+        }
+
+        .secondary-btn {
+            background-color: #f2f2f2;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .secondary-btn:hover {
+            background-color: #e5e5e5;
+        }
+
+        /* Search location dialog */
+        #location-search-dialog {
+            width: 350px;
+            border: none;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        #location-search-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        #location-search-input {
+            flex: 1;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        #search-results {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .search-result-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+
+        .search-result-item:hover {
+            background-color: #f5f5f5;
+        }
+
+        .location-container {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 8px;
+            background-color: #f9f9f9;
+            width: 320px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .location-map {
+            width: 100%;
+            height: 180px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            margin-top: 5px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .location-map:hover {
+            transform: scale(1.02);
+        }
+
+        .location-details {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            align-items: center;
+        }
+
+        .location-address {
+            font-size: 0.9em;
+            color: #444;
+            margin-top: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+        .location-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+        }
+
+        .location-button {
+            background-color: #f2f2f2;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-size: 0.8em;
+            cursor: pointer;
+        }
+
+        .location-button:hover {
+            background-color: #e5e5e5;
+        }
+
+        /* Microphone button styles */
+        #mic-button {
+            background: none;
+            border: none;
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 0 10px;
+            transition: all 0.3s ease;
+        }
+
+        #mic-button.listening {
+            color: red;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.2);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* Adjust the input field to make room for the mic button */
+        #message {
+            flex: 1;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>ChatRT 3.0</h1>
+        <button id="btn" popovertarget="pop">👧🏻 = <b id="count">0</b></button>
+        <div id="pop" popover>TODO</div>
+    </header>
+
+    <main>
+        <div style="flex: 1"></div>
+        <ul id="chat"></ul>
+    </main>
+
+    <footer>
+        <form autocomplete="off">
+            <input type="text" id="message" placeholder="Enter Message" autofocus>
+            <button type="button" id="mic-button">🎤</button>
+            <button type="button" id="image">Image</button>
+            <button type="button" id="gallery">Gallery</button>
+            <button type="button" id="location">Location</button>
+            <button type="button" id="file">File</button>
+            <button type="button" id="leave">Leave</button>
+            <input type="file" id="file1" accept="image/*" hidden multiple>
+            <input type="file" id="file2" hidden multiple>
+        </form>
+    </footer>
+
+    <dialog id="dialog">
+        <form method="dialog"><button>X</button></form>
+        <div id="container"></div>
+    </dialog>
+
+    <!-- Location sharing dialog -->
+    <dialog id="location-dialog">
+        <h3>Share Your Location</h3>
+        <div class="location-status" id="location-status">Click "Get Current Location" to start</div>
+        <div class="map-preview" id="map-preview"></div>
+        <div class="location-address" id="location-address"></div>
+        <div class="actions">
+            <button id="get-location">Get Current Location</button>
+            <button id="share-location" disabled>Share Location</button>
+            <button id="cancel-location">Cancel</button>
+        </div>
+    </dialog>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.slim.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD7XAajdqoRWutEI8zs5OTxZgna7KYWTTs&libraries=places"></script>
+    <script src="js/app.js"></script>
+    <script>
+        // Checking =============================
+        const name = sessionStorage.getItem('name');
+        if (!name) {
+            location = '/';
+            throw 'ERROR: Invalid name';
+        }
+
+        // Location Variables ===================
+        let currentPosition = null;
+        let currentAddress = '';
+        let locationMap = null;
+        let geocoder = null;
+
+        // General Events =======================
+        $('#leave').click(e => {
+            sessionStorage.clear();
+            location = '/';
+        });
+
+        // General Functions ====================
+        function getImageURL(message) {
+            const re = /\.(jpg|jpeg|png|webp|bmp|gif)$/i;
+            try {
+                const url = new URL(message);
+                if (re.test(url.pathname)) {
+                    return url.href;
+                }
+            }
+            catch {
+                // Do nothing
+            }
+            return null;
+        }
+
+        function getYouTubeId(message) {
+            try {
+                const url = new URL(message);
+                if (url.hostname == 'www.youtube.com' &&
+                    url.pathname == '/watch') {
+                    return url.searchParams.get('v');
+                }
+            }
+            catch {
+                // Do nothing
+            }
+            return null;
+        }
+
+        function sendImages(files) {
+            for (const f of files) {
+                if (f && f.type.startsWith('image/')) {
+                    fit(f, 500, 500, 'dataURL', 'image/webp')
+                        .then(url => con.invoke('SendImage', name, url));
+                }
+            }
+        }
+
+        function sendFiles(files) {
+            for (const f of files) {
+                if (f) {
+                    const fr = new FileReader();
+                    fr.onload = e => {
+                        const url = e.target.result;
+                        con.invoke('SendFile', name, url, f.name);
+                    };
+                    fr.readAsDataURL(f);
+                }
+            }
+        }
+
+
+        // Location Functions ===================
+        function initLocationDialog() {
+            geocoder = new google.maps.Geocoder();
+
+            $('#location').click(e => {
+                $('#location-dialog')[0].showModal();
+                $('#location-status').text('Click "Get Current Location" to start');
+                $('#share-location').prop('disabled', true);
+                currentPosition = null;
+                currentAddress = '';
+
+                if (!locationMap) {
+                    // Default map center (world view)
+                    const defaultPosition = { lat: 0, lng: 0 };
+                    locationMap = new google.maps.Map(document.getElementById('map-preview'), {
+                        zoom: 2,
+                        center: defaultPosition,
+                        mapTypeId: google.maps.MapTypeId.ROADMAP
+                    });
+                }
+            });
+
+            $('#get-location').click(e => {
+                $('#location-status').text('Getting your location...');
+
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        // Success callback
+                        position => {
+                            currentPosition = {
+                                lat: position.coords.latitude,
+                                lng: position.coords.longitude
+                            };
+
+                            // Center map on position
+                            locationMap.setCenter(currentPosition);
+                            locationMap.setZoom(15);
+
+                            // Add marker
+                            new google.maps.Marker({
+                                position: currentPosition,
+                                map: locationMap,
+                                title: 'Your Location'
+                            });
+
+                            // Get address
+                            geocoder.geocode({ 'location': currentPosition }, (results, status) => {
+                                if (status === 'OK' && results[0]) {
+                                    currentAddress = results[0].formatted_address;
+                                    $('#location-address').text(currentAddress);
+                                } else {
+                                    currentAddress = 'Unknown location';
+                                    $('#location-address').text(currentAddress);
+                                }
+
+                                $('#location-status').text('Location found! Click "Share Location" to send');
+                                $('#share-location').prop('disabled', false);
+                            });
+                        },
+                        // Error callback
+                        error => {
+                            let errorMsg = 'Unable to retrieve your location';
+                            switch (error.code) {
+                                case error.PERMISSION_DENIED:
+                                    errorMsg = 'User denied the request for Geolocation';
+                                    break;
+                                case error.POSITION_UNAVAILABLE:
+                                    errorMsg = 'Location information is unavailable';
+                                    break;
+                                case error.TIMEOUT:
+                                    errorMsg = 'The request to get user location timed out';
+                                    break;
+                            }
+                            $('#location-status').text(errorMsg);
+                        }
+                    );
+                } else {
+                    $('#location-status').text('Geolocation is not supported by this browser');
+                }
+            });
+
+            $('#share-location').click(e => {
+                if (currentPosition) {
+                    con.invoke('SendLocation', name, currentPosition.lat, currentPosition.lng, currentAddress);
+                    $('#location-dialog')[0].close();
+                }
+            });
+
+            $('#cancel-location').click(e => {
+                $('#location-dialog')[0].close();
+            });
+        }
+
+        function createStaticMap(lat, lng, zoom = 14) {
+            // Using Google Static Maps API
+            return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${zoom}&size=300x200&markers=color:red%7C${lat},${lng}&key=AIzaSyD7XAajdqoRWutEI8zs5OTxZgna7KYWTTs`;
+        }
+
+        function openInGoogleMaps(lat, lng) {
+            window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+        }
+
+
+        // Connection Setup =====================
+        const param = $.param({ name });
+
+        const con = new signalR.HubConnectionBuilder()
+            .withUrl('/hub?' + param)
+            .build();
+
+        con.onclose(err => {
+            sessionStorage.clear();
+            location = '/';
+        });
+
+        // Function to detect and convert Malaysian phone numbers to WhatsApp links
+        function convertPhoneToWhatsApp(message) {
+            // Match Malaysian phone numbers in various formats:
+            // - 0123456789 (without country code)
+            // - +60123456789 (with + country code)
+            // - 60123456789 (with country code without +)
+            const phoneRegex = /(\+?60|0)([1-9][0-9]{7,9})\b/g;
+
+            return message.replace(phoneRegex, (match, prefix, number) => {
+                // Normalize to E.164 format (remove leading 0, ensure 60 prefix)
+                const normalizedNumber = prefix === '0' ? '60' + number : (prefix === '+60' ? '60' + number : prefix + number);
+
+                // Create both types of WhatsApp links
+                const waLink = `https://wa.me/${normalizedNumber}`;
+                const waProtocolLink = `whatsapp://send?phone=${normalizedNumber}`;
+
+                // Return formatted HTML with both links
+                return `<a href="${waLink}" target="_blank" title="Open in WhatsApp Web">${match}</a> 
+               <a href="${waProtocolLink}" title="Open in WhatsApp App"><small>[Open in App]</small></a>`;
+            });
+        }
+
+        // Update the receive handlers to include timestamps
+        con.on('ReceiveText', (name, message, who, timestamp) => {
+            // Text to emoji
+            message = message
+                .replaceAll(':)', '😊')
+                .replaceAll(':(', '😒')
+                .replaceAll('<3', '❤️');
+
+            // HTML escape
+            message = $('<div>').text(message).html();
+
+            // Convert phone numbers to WhatsApp links
+            message = convertPhoneToWhatsApp(message);
+
+            // Text to hyperlink (for other URLs)
+            message = message.replace(
+                /(https?:\/\/\S+)/gi,
+                function (match) {
+                    // Skip replacement if this is already part of an HTML tag
+                    if (/<a\s+[^>]*href=[^>]*>/.test(match) ||
+                        match.indexOf('</a>') > -1) {
+                        return match;
+                    }
+                    return match
+                }
+            );
+
+            // Format timestamp if present
+            let timeHtml = '';
+            if (timestamp) {
+                const time = new Date(timestamp);
+                timeHtml = `<small class="msg-time">${time.toLocaleTimeString()}</small>`;
+            }
+
+            $('#chat').append(`
+    <li class="${who}">
+        <div>
+            <b>${name}:</b> ${message} ${timeHtml}
+        </div>
+    </li>
+`);
+        });
+
+        con.on('ReceiveImage', (name, url, who, timestamp) => {
+            // Format timestamp if present
+            let timeHtml = '';
+            if (timestamp) {
+                const time = new Date(timestamp);
+                timeHtml = `<small class="msg-time">${time.toLocaleTimeString()}</small>`;
+            }
+
+            $('#chat').append(`
+        <li class="${who}">
+            <div>
+                <b>${name}</b> sent an image ${timeHtml}<br>
+                <img src="${url}" class="image">
+            </div>
+        </li>
+    `);
+        });
+
+        con.on('ReceiveYouTube', (name, id, who, timestamp) => {
+            // Format timestamp if present
+            let timeHtml = '';
+            if (timestamp) {
+                const time = new Date(timestamp);
+                timeHtml = `<small class="msg-time">${time.toLocaleTimeString()}</small>`;
+            }
+
+            $('#chat').append(`
+        <li class="${who}">
+            <div>
+                <b>${name}</b> sent a video ${timeHtml}<br>
+                <iframe width="400" height="300" 
+                        src="https://www.youtube.com/embed/${id}"
+                        frameborder="0"
+                        allowfullscreen></iframe>
+            </div>
+        </li>
+    `);
+        });
+
+        con.on('ReceiveFile', (name, url, filename, who, timestamp) => {
+            // Format timestamp if present
+            let timeHtml = '';
+            if (timestamp) {
+                const time = new Date(timestamp);
+                timeHtml = `<small class="msg-time">${time.toLocaleTimeString()}</small>`;
+            }
+
+            $('#chat').append(`
+        <li class="${who}">
+            <div>
+                <b>${name}</b> sent a file ${timeHtml}<br>
+                <a href="${url}" download="${filename}">${filename}</a>
+            </div>
+        </li>
+    `);
+        });
+
+        con.on('ReceiveLocation', (name, lat, lng, address, who, timestamp) => {
+            const mapUrl = createStaticMap(lat, lng);
+
+            // Format timestamp if present
+            let timeHtml = '';
+            if (timestamp) {
+                const time = new Date(timestamp);
+                timeHtml = `<small class="msg-time">${time.toLocaleTimeString()}</small>`;
+            }
+
+            $('#chat').append(`
+        <li class="${who}">
+            <div>
+                <b>${name}</b> shared a location ${timeHtml}<br>
+                <div class="location-container">
+                    <img src="${mapUrl}" class="location-map" 
+                         data-lat="${lat}" data-lng="${lng}" alt="Map">
+                    <div class="location-address">${address}</div>
+                </div>
+            </div>
+        </li>
+    `);
+        });
+
+        con.on('UpdateStatus', (count, status, names) => {
+            $('#count').text(count);
+
+            $('#chat').append(`
+                <li class="status">
+                    <div>
+                        ${status}
+                    </div>
+                </li>
+            `);
+
+            $('#pop').html(names.toSorted().join('<br>'));
+        });
+
+        // Create a cooldown notification element
+        const cooldownNotification = document.createElement('div');
+        cooldownNotification.id = 'cooldown-notification';
+        cooldownNotification.style.display = 'none';
+        cooldownNotification.style.position = 'fixed';
+        cooldownNotification.style.bottom = '70px';
+        cooldownNotification.style.left = '50%';
+        cooldownNotification.style.transform = 'translateX(-50%)';
+        cooldownNotification.style.backgroundColor = '#f44336';
+        cooldownNotification.style.color = 'white';
+        cooldownNotification.style.padding = '10px 15px';
+        cooldownNotification.style.borderRadius = '5px';
+        cooldownNotification.style.zIndex = '1000';
+        cooldownNotification.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
+        document.body.appendChild(cooldownNotification);
+
+        // Add a handler for the MessageBlocked event
+        con.on('MessageBlocked', (reason, seconds) => {
+            // Update the notification text
+            cooldownNotification.textContent = `${reason}. You can send messages again in ${seconds} seconds.`;
+            cooldownNotification.style.display = 'block';
+
+            // Disable the send functionality
+            $('#message').prop('disabled', true);
+            $('footer form button').prop('disabled', true);
+
+            // Start countdown
+            let remainingSeconds = seconds;
+            const countdownInterval = setInterval(() => {
+                remainingSeconds--;
+                if (remainingSeconds <= 0) {
+                    // Re-enable sending when countdown completes
+                    $('#message').prop('disabled', false);
+                    $('footer form button').prop('disabled', false);
+                    cooldownNotification.style.display = 'none';
+                    clearInterval(countdownInterval);
+                } else {
+                    // Update countdown text
+                    cooldownNotification.textContent = `${reason}. You can send messages again in ${remainingSeconds} seconds.`;
+                }
+            }, 1000);
+        });
+        // Add this in your main() function or script section
+        function initSpeechRecognition() {
+            const micButton = $('#mic-button');
+            const messageInput = $('#message');
+
+            // Check if browser supports speech recognition
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                micButton.hide();
+                return;
+            }
+
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            micButton.click(function () {
+                if ($(this).hasClass('listening')) {
+                    // Stop listening if already active
+                    recognition.stop();
+                    $(this).removeClass('listening');
+                } else {
+                    // Start listening
+                    try {
+                        recognition.start();
+                        $(this).addClass('listening');
+                        messageInput.attr('placeholder', 'Listening...');
+                    } catch (e) {
+                        console.error('Speech recognition error:', e);
+                        alert('Error starting speech recognition: ' + e.message);
+                    }
+                }
+            });
+
+            recognition.onresult = function (event) {
+                const transcript = event.results[0][0].transcript;
+                messageInput.val(transcript);
+                micButton.removeClass('listening');
+                messageInput.attr('placeholder', 'Enter Message');
+                messageInput.focus();
+            };
+
+            recognition.onerror = function (event) {
+                console.error('Speech recognition error', event.error);
+                micButton.removeClass('listening');
+                messageInput.attr('placeholder', 'Enter Message');
+
+                if (event.error === 'not-allowed') {
+                    alert('Microphone access was denied. Please allow microphone access to use speech-to-text.');
+                }
+            };
+
+            recognition.onend = function () {
+                micButton.removeClass('listening');
+                messageInput.attr('placeholder', 'Enter Message');
+            };
+        }
+
+        // Call this in your main() function after con.start()
+        initSpeechRecognition();
+
+        // Start ================================
+        con.start().then(main);
+
+        function main() {
+            // Initialize location functionality
+            initLocationDialog();
+
+            // Form
+            $('footer form').submit(e => {
+                e.preventDefault();
+                const message = $('#message').val().trim();
+                if (message) {
+                    const url = getImageURL(message);
+                    const id = getYouTubeId(message);
+
+                    if (url) {
+                        con.invoke('SendImage', name, url);
+                    }
+                    else if (id) {
+                        con.invoke('SendYouTube', name, id);
+                    }
+                    else {
+                        con.invoke('SendText', name, message);
+                    }
+                }
+                $('#message').val('').focus();
+            });
+
+            // Fullscreen
+            $(document).on('click', '.image', e => {
+                document.fullscreenElement ?
+                    document.exitFullscreen() :
+                    e.target.requestFullscreen();
+            });
+
+            // Open location in Google Maps
+            $(document).on('click', '.location-map', e => {
+                const lat = $(e.target).data('lat');
+                const lng = $(e.target).data('lng');
+                openInGoogleMaps(lat, lng);
+            });
+
+            // Image file picker
+            $('#image').click(e => $('#file1').click());
+
+            $('#file1').change(e => {
+                const files = e.target.files;
+                sendImages(files);
+                e.target.value = null;
+            });
+
+            // File file picker
+            $('#file').click(e => $('#file2').click());
+
+            $('#file2').change(e => {
+                const files = e.target.files;
+                sendFiles(files);
+                e.target.value = null;
+            });
+
+            // Drag and drop
+            $('main').on('dragenter dragover', e => {
+                e.preventDefault();
+                $('main').addClass('active');
+            });
+
+            $('main').on('dragleave drop', e => {
+                e.preventDefault();
+                $('main').removeClass('active');
+            });
+
+            $('main').on('drop', e => {
+                const files = e.originalEvent.dataTransfer.files;
+                for (const f of files) {
+                    if (f.type.startsWith('image/')) {
+                        sendImages([f]);
+                    }
+                    else {
+                        sendFiles([f]);
+                    }
+                }
+            });
+
+            // Dialog
+            $('#gallery').click(e => {
+                const images = $('.image').clone();
+                $('#container').html(images.length ? images : 'No image');
+                $('#dialog')[0].showModal();
+            });
+
+            $('#dialog').on('close', e => {
+                $('#container').empty();
+            });
+        }
+    </script>
+</body>
+
+</html>

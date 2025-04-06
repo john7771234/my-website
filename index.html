@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
+    <title>ChatRT 3.0</title>
+    <link href="image/favicon.png" rel="shortcut icon">
+    <link href="css/app.css" rel="stylesheet">
+    <style>
+        .avatar-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+            max-width: 400px;
+        }
+
+        .avatar-option {
+            font-size: 24px;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ccc;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .avatar-option:hover {
+            transform: scale(1.1);
+            background-color: #f5f5f5;
+        }
+
+        .avatar-option.selected {
+            border: 2px solid #4285f4;
+            background-color: #e8f0fe;
+        }
+
+        .avatar-preview {
+            font-size: 36px;
+            width: 80px;
+            height: 80px;
+            margin: 15px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #ccc;
+            border-radius: 50%;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .avatar-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .avatar-tab {
+            padding: 8px 15px;
+            background-color: #f0f0f0;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .avatar-tab.active {
+            background-color: #4285f4;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .error-message {
+            color: #d93025;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .random-btn {
+            background-color: #f0f0f0;
+            border: none;
+            border-radius: 4px;
+            padding: 0 10px;
+            cursor: pointer;
+        }
+
+        .file-upload-btn {
+            display: inline-block;
+            padding: 8px 15px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .custom-upload-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>ChatRT 3.0</h1>
+    </header>
+
+    <main>
+        <form autocomplete="off">
+            <h2>Join Chat</h2>
+            <div class="input-group">
+                <input type="text" id="name" placeholder="Enter Username" autofocus>
+                <button type="button" id="random-name" class="random-btn">🎲</button>
+            </div>
+            <div id="name-error" class="error-message">This username is already taken. Please choose another.</div>
+            
+            <h3>Choose Avatar</h3>
+            <div class="avatar-preview" id="avatar-preview">👦🏻</div>
+            
+            <div class="avatar-tabs">
+                <div class="avatar-tab active" data-tab="emoji">Emoji</div>
+                <div class="avatar-tab" data-tab="upload">Upload</div>
+            </div>
+            
+            <div id="emoji-tab" class="tab-content active">
+                <div class="avatar-options" id="avatar-options">
+                    <div class="avatar-option selected" data-avatar="👦🏻">👦🏻</div>
+                    <div class="avatar-option" data-avatar="👧🏻">👧🏻</div>
+                    <div class="avatar-option" data-avatar="🐶">🐶</div>
+                    <div class="avatar-option" data-avatar="🐱">🐱</div>
+                    <div class="avatar-option" data-avatar="🐭">🐭</div>
+                    <div class="avatar-option" data-avatar="🐹">🐹</div>
+                    <div class="avatar-option" data-avatar="🐰">🐰</div>
+                    <div class="avatar-option" data-avatar="🦊">🦊</div>
+                    <div class="avatar-option" data-avatar="🐻">🐻</div>
+                    <div class="avatar-option" data-avatar="🐼">🐼</div>
+                    <div class="avatar-option" data-avatar="🐨">🐨</div>
+                    <div class="avatar-option" data-avatar="🐯">🐯</div>
+                    <div class="avatar-option" data-avatar="🦁">🦁</div>
+                    <div class="avatar-option" data-avatar="🐮">🐮</div>
+                    <div class="avatar-option" data-avatar="🐷">🐷</div>
+                    <div class="avatar-option" data-avatar="🐸">🐸</div>
+                    <div class="avatar-option" data-avatar="🐵">🐵</div>
+                    <div class="avatar-option" data-avatar="🐺">🐺</div>
+                    <div class="avatar-option" data-avatar="🐗">🐗</div>
+                    <div class="avatar-option" data-avatar="🦝">🦝</div>
+                    <div class="avatar-option" data-avatar="🐴">🐴</div>
+                    <div class="avatar-option" data-avatar="🦄">🦄</div>
+                    <div class="avatar-option" data-avatar="🦓">🦓</div>
+                </div>
+            </div>
+            
+            <div id="upload-tab" class="tab-content">
+                <label for="avatar-upload" class="file-upload-btn">Choose Image File</label>
+                <input type="file" id="avatar-upload" class="custom-upload-input" accept="image/jpeg, image/png">
+                <div id="upload-error" class="error-message">Please select a valid JPEG or PNG image.</div>
+            </div>
+
+            <button type="submit" id="join-btn">Join Chat</button>
+        </form>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.slim.js"></script>
+    <script>
+        // Global variables for avatar data
+        let selectedAvatar = '👦🏻';
+        let isCustomAvatar = false;
+        let customAvatarData = null;
+        
+        // Check if username is available
+        async function checkUsername(username) {
+            try {
+                const response = await fetch(`/api/checkUsername?name=${encodeURIComponent(username)}`);
+                const data = await response.json();
+                return data.available;
+            } catch (error) {
+                console.error("Error checking username:", error);
+                return true; // Assume available if there's an error
+            }
+        }
+        
+        // Generate random username
+        function generateRandomUsername() {
+            const adjectives = ['Happy', 'Lucky', 'Sunny', 'Clever', 'Brave', 'Bright', 'Calm', 'Swift', 'Kind', 'Smart'];
+            const nouns = ['Panda', 'Tiger', 'Dolphin', 'Eagle', 'Penguin', 'Lion', 'Wolf', 'Fox', 'Bear', 'Hawk'];
+            const randomNum = Math.floor(Math.random() * 1000);
+            
+            const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
+            const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+            
+            return `${randomAdj}${randomNoun}${randomNum}`;
+        }
+        
+        // Switch between avatar tabs
+        $('.avatar-tab').click(function() {
+            $('.avatar-tab').removeClass('active');
+            $(this).addClass('active');
+            
+            const tabId = $(this).data('tab');
+            $('.tab-content').removeClass('active');
+            $(`#${tabId}-tab`).addClass('active');
+        });
+        
+        // Handle emoji avatar selection
+        $('.avatar-option').click(function() {
+            $('.avatar-option').removeClass('selected');
+            $(this).addClass('selected');
+            
+            selectedAvatar = $(this).data('avatar');
+            isCustomAvatar = false;
+            
+            // Update preview
+            $('#avatar-preview').css('background-image', '');
+            $('#avatar-preview').text(selectedAvatar);
+        });
+        
+        // Handle file upload for avatar
+        $('#avatar-upload').change(function(e) {
+            const file = e.target.files[0];
+            
+            if (file) {
+                // Check if file is a valid image (JPEG or PNG)
+                if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
+                    $('#upload-error').show();
+                    return;
+                }
+                
+                // Hide error message if previously shown
+                $('#upload-error').hide();
+                
+                // Read the file and convert to data URL
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    customAvatarData = event.target.result;
+                    isCustomAvatar = true;
+                    
+                    // Update preview
+                    $('#avatar-preview').text('');
+                    $('#avatar-preview').css('background-image', `url(${customAvatarData})`);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Handle random username button
+        $('#random-name').click(function() {
+            const randomUsername = generateRandomUsername();
+            $('#name').val(randomUsername);
+            $('#name-error').hide();
+        });
+        
+        // Form submission
+        $('form').submit(async function(e) {
+            e.preventDefault();
+            const name = $('#name').val().trim();
+            
+            if (name) {
+                // Check if username is available
+                const isAvailable = await checkUsername(name);
+                
+                if (!isAvailable) {
+                    $('#name-error').show();
+                    return;
+                }
+                
+                // Store user data in session storage
+                sessionStorage.setItem('name', name);
+                
+                if (isCustomAvatar) {
+                    sessionStorage.setItem('avatarType', 'custom');
+                    sessionStorage.setItem('avatarData', customAvatarData);
+                } else {
+                    sessionStorage.setItem('avatarType', 'emoji');
+                    sessionStorage.setItem('avatarData', selectedAvatar);
+                }
+                
+                // Redirect to chat page
+                location = 'chat.html';
+            } else {
+                $('#name').focus();
+            }
+        });
+    </script>
+</body>
+</html>
